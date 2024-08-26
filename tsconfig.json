@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "*": ["node_modules/*"],
+      "@meshsdk/react": ["node_modules/@meshsdk/react"],
+      "@meshsdk/core": ["node_modules/@meshsdk/core"],
+      "@components/*": ["components/*"]
+    },
+    "allowSyntheticDefaultImports": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "file-system-access.d.ts"
+  ],
+  "exclude": ["node_modules"]
+}
