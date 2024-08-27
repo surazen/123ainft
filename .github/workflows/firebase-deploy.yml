@@ -1,5 +1,4 @@
 name: Deploy to Firebase
-
 on:
   push:
     branches:
@@ -10,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -18,19 +17,24 @@ jobs:
           
       - name: Install dependencies
         run: npm ci
-
-      - name: Build and Export
-        run: npm run build-and-export
+        
+      - name: Build
+        run: npm run build
         env:
           NODE_ENV: ${{ vars.NODE_ENV }}
-
+          STABILITY_API_KEY: ${{ secrets.STABILITY_API_KEY }}
+          PINATA_JWT_TOKEN: ${{ secrets.PINATA_JWT_TOKEN }}
+          
       - name: Deploy to Firebase
-        uses: w9jds/firebase-action@master
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          args: deploy --only hosting
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          channelId: live
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-
+          FIREBASE_CLI_PREVIEWS: hostingchannels
+          
       - name: Set Firebase secrets
         run: |
           firebase apphosting:secrets:set stability_api_key_secret --value "${{ secrets.STABILITY_API_KEY }}" --project ${{ vars.FIREBASE_PROJECT_ID }}
