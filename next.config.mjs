@@ -1,39 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: 'export', // Add this line for static exports
+  output: 'export',
+  images: {
+    unoptimized: true,
+  },
   webpack: function (config, options) {
     const { isServer } = options;
     config.experiments = {
       asyncWebAssembly: true,
       layers: true,
     };
-    // Improve WebAssembly loading
-    config.output.webassemblyModuleFilename = isServer
-      ? './../static/wasm/[modulehash].wasm'
-      : 'static/wasm/[modulehash].wasm';
     return config;
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "https://api.blockfrost.io/:path*",
-      },
-    ];
   },
   env: {
     STABILITY_API_KEY: process.env.STABILITY_API_KEY,
-  },
-  // Enable build cache
-  experimental: {
-    swcMinify: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
+    PINATA_JWT_TOKEN: process.env.PINATA_JWT_TOKEN,
   },
 };
 
