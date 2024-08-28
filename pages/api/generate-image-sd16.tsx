@@ -1,4 +1,4 @@
-// File: api/generate-image-sd16.tsx
+// File: api/generate-image-sd16.tsx //
 
 import type { NextApiRequest, NextApiResponse } from "next";
 
