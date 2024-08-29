@@ -9,15 +9,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
-  // Handle CORS
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-
   // Handle OPTIONS request
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -29,14 +20,14 @@ export default async function handler(
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
   }
 
-  const { prompt, height, width } = req.body;
+  const { prompt, height, width, style_preset } = req.body;
 
   if (!prompt) {
     return res.status(400).json({ error: "Prompt is required" });
   }
 
   const engineId = "stable-diffusion-v1-6";
-  const apiHost = process.env.API_HOST ?? "https://api.stability.ai";
+  const apiHost = process.env.STABILITY_API_HOST ?? "https://api.stability.ai";
   const apiKey = process.env.STABILITY_API_KEY;
 
   if (!apiKey) {
@@ -60,22 +51,18 @@ export default async function handler(
           width: width || 512,
           steps: 30,
           samples: 1,
-          style_preset: req.body.style_preset,
+          style_preset: style_preset,
         }),
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Non-200 response: ${await response.text()}`);
+      const errorText = await response.text();
+      console.error(`Stability API error: ${errorText}`);
+      throw new Error(`Stability API error: ${response.status} ${response.statusText}`);
     }
 
-    const responseJSON = (await response.json()) as {
-      artifacts: Array<{
-        base64: string;
-        seed: number;
-        finishReason: string;
-      }>;
-    };
+    const responseJSON = await response.json();
 
     if (responseJSON.artifacts && responseJSON.artifacts.length > 0) {
       const imageUrl = `data:image/png;base64,${responseJSON.artifacts[0].base64}`;
@@ -85,6 +72,6 @@ export default async function handler(
     }
   } catch (error) {
     console.error("Error generating image:", error);
-    res.status(500).json({ error: "Failed to generate image" });
+    res.status(500).json({ error: error.message || "Failed to generate image" });
   }
 }
