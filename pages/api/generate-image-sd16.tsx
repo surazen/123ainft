@@ -70,8 +70,12 @@ export default async function handler(
     } else {
       throw new Error("No image generated");
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error generating image:", error);
-    res.status(500).json({ error: error.message || "Failed to generate image" });
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "An unknown error occurred" });
+    }
   }
 }
