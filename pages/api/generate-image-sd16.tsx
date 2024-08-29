@@ -51,7 +51,7 @@ export default async function handler(
           width: width || 512,
           steps: 30,
           samples: 1,
-          style_preset: style_preset,
+          style_preset:req.body.style_preset,
         }),
       }
     );
