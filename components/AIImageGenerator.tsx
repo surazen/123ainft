@@ -149,6 +149,7 @@ const AIImageGenerator: React.FC<AIImageGeneratorProps> = ({
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: 'include',
         body: JSON.stringify(requestBody),
       });
 
