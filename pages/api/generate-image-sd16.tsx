@@ -1,5 +1,3 @@
-// File: api/generate-image-sd16.tsx //
-
 import type { NextApiRequest, NextApiResponse } from "next";
 
 type Data = {
@@ -11,6 +9,21 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
+  // Handle CORS
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+
+  // Handle OPTIONS request
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   if (req.method !== "POST") {
     res.setHeader("Allow", ["POST"]);
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
@@ -23,7 +36,7 @@ export default async function handler(
   }
 
   const engineId = "stable-diffusion-v1-6";
-  const apiHost = process.env.STABILITY_API_HOST ?? "https://api.stability.ai";
+  const apiHost = process.env.API_HOST ?? "https://api.stability.ai";
   const apiKey = process.env.STABILITY_API_KEY;
 
   if (!apiKey) {
