@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import axios from "axios";
 
 type Data = {
   imageUrl?: string;
@@ -10,58 +9,87 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
+  console.log("API route started");
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   if (req.method !== "POST") {
+    console.log(`Invalid method: ${req.method}`);
     res.setHeader("Allow", ["POST"]);
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
   }
 
-  const { prompt, height, width } = req.body;
+  const { prompt, height, width, style_preset } = req.body;
+  console.log(`Received request with prompt: ${prompt}, height: ${height}, width: ${width}, style_preset: ${style_preset}`);
 
   if (!prompt) {
+    console.log("Missing prompt in request");
     return res.status(400).json({ error: "Prompt is required" });
   }
 
-  try {
-    // SDXL specific payload
-    const payload = {
-      text_prompts: [{ text: prompt }],
-      cfg_scale: 7,
-      height: height || 512,
-      width: width || 512,
-      steps: 30,
-      samples: 1,
-      style_preset: req.body.style_preset,
-    };
+  const engineId = "stable-diffusion-xl-1024-v1-0";
+  const apiHost = process.env.STABILITY_API_HOST ?? "https://api.stability.ai";
+  const apiKey = process.env.STABILITY_API_KEY;
 
-    // Make request to SDXL API
-    const response = await axios.post(
-      "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image",
-      payload,
+  console.log(`Using API host: ${apiHost}`);
+
+  if (!apiKey) {
+    console.error("Missing Stability API key");
+    return res.status(500).json({ error: "Missing Stability API key." });
+  }
+
+  try {
+    console.log("Sending request to Stability API");
+    const response = await fetch(
+      `${apiHost}/v1/generation/${engineId}/text-to-image`,
       {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          Authorization: `Bearer ${process.env.STABILITY_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
         },
-        responseType: "json",
+        body: JSON.stringify({
+          text_prompts: [{ text: prompt }],
+          cfg_scale: 7,
+          height: height || 1024,
+          width: width || 1024,
+          steps: 30,
+          samples: 1,
+          style_preset: style_preset,
+        }),
       }
     );
 
-    if (response.status !== 200) {
-      throw new Error(`Non-200 response: ${response.status}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Stability API error: ${response.status} ${response.statusText}`);
+      console.error(`Error details: ${errorText}`);
+      throw new Error(`Stability API error: ${response.status} ${response.statusText}`);
     }
 
-    // Process SDXL response
-    const responseData = response.data;
-    if (responseData.artifacts && responseData.artifacts.length > 0) {
-      const base64Image = responseData.artifacts[0].base64;
-      const imageUrl = `data:image/png;base64,${base64Image}`;
+    console.log("Received response from Stability API");
+    const responseJSON = await response.json();
+
+    if (responseJSON.artifacts && responseJSON.artifacts.length > 0) {
+      console.log("Image generated successfully");
+      const imageUrl = `data:image/png;base64,${responseJSON.artifacts[0].base64}`;
       res.status(200).json({ imageUrl });
     } else {
+      console.error("No image generated in the response");
       throw new Error("No image generated");
     }
-  } catch (error) {
-    console.error("Error generating image:", error);
-    res.status(500).json({ error: "Failed to generate image" });
+  } catch (error: unknown) {
+    console.error("Error in API route:", error);
+    if (error instanceof Error) {
+      res.status(500).json({ error: `Error: ${error.message}` });
+    } else {
+      res.status(500).json({ error: "An unknown error occurred" });
+    }
   }
+
+  console.log("API route completed");
 }
