@@ -1,3 +1,5 @@
+// pages/api/generate-image-sdxl.tsx
+
 import type { NextApiRequest, NextApiResponse } from "next";
 
 type Data = {
