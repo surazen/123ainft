@@ -292,11 +292,11 @@ const LandingPage = () => {
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Enter Secret Key</ModalHeader>
+          <ModalHeader>Enter Test Key</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Input
-              placeholder="Enter secret key"
+              placeholder="Enter test key"
               value={secretKey}
               onChange={(e) => setSecretKey(e.target.value)}
               type="password"
