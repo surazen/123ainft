@@ -11,13 +11,21 @@ import {
   chakra,
   Link,
   HStack,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  useToast,
 } from "@chakra-ui/react";
 import CardanoAINFTMinter from "./CardanoAINFTMinter";
 import LandingPageContent from "./LandingPageContent";
 
 const web3Gradient = "linear-gradient(to right, #00FFFF, #FF00FF)";
 
-// Gradient options for the logo
 const gradientOptions = {
   option1: "linear-gradient(to right, #00FFFF, #FF00FF)", // Cyan to Magenta
   option2: "linear-gradient(to right, #FFA500, #FF00FF)", // Orange to Magenta
@@ -26,7 +34,6 @@ const gradientOptions = {
   option5: "linear-gradient(to right, #FFD700, black)", // Gold to Orange Red
 };
 
-// Use gradientOptions.option1 as the default, but you can easily change this
 const selectedGradient = gradientOptions.option5;
 
 const LogoText = chakra(Text, {
@@ -42,7 +49,6 @@ const LogoText = chakra(Text, {
   },
 });
 
-// Wave Animation
 const WaveAnimation = () => (
   <Box
     position="absolute"
@@ -84,11 +90,63 @@ const LandingPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [secretKey, setSecretKey] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const toast = useToast();
 
-  const handleLogin = (e: { preventDefault: () => void }) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (email && password) {
       setIsLoggedIn(true);
+    }
+  };
+
+  const handleGoogleSignIn = () => {
+    onOpen();
+  };
+
+  const handleSecretKeySubmit = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/validate-key", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ key: secretKey }),
+      });
+      const data = await response.json();
+      if (data.valid) {
+        setIsLoggedIn(true);
+        onClose();
+        toast({
+          title: "Login Successful",
+          description: "Welcome to the app!",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: "Invalid Key",
+          description: "The entered secret key is not valid.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error("Error validating key:", error);
+      toast({
+        title: "Error",
+        description: "An error occurred while validating the key.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -217,7 +275,7 @@ const LandingPage = () => {
                   borderColor="gray.300"
                   _hover={{ bg: "gray.100" }}
                   size="lg"
-                  onClick={() => setIsLoggedIn(true)}
+                  onClick={handleGoogleSignIn}
                 >
                   Sign in with Google
                 </Button>
@@ -230,8 +288,38 @@ const LandingPage = () => {
         </Box>
       </Container>
       <WaveAnimation />
+
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Enter Secret Key</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Input
+              placeholder="Enter secret key"
+              value={secretKey}
+              onChange={(e) => setSecretKey(e.target.value)}
+              type="password"
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              colorScheme="blue"
+              mr={3}
+              onClick={handleSecretKeySubmit}
+              isLoading={isLoading}
+            >
+              Submit
+            </Button>
+            <Button variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };
 
 export default LandingPage;
+
