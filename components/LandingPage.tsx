@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -20,6 +20,7 @@ import {
   ModalCloseButton,
   useDisclosure,
   useToast,
+  Checkbox,
 } from "@chakra-ui/react";
 import CardanoAINFTMinter from "./CardanoAINFTMinter";
 import LandingPageContent from "./LandingPageContent";
@@ -91,9 +92,18 @@ const LandingPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [secretKey, setSecretKey] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
+
+  useEffect(() => {
+    const savedKey = localStorage.getItem("secretKey");
+    if (savedKey) {
+      setSecretKey(savedKey);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,6 +128,11 @@ const LandingPage = () => {
       });
       const data = await response.json();
       if (data.valid) {
+        if (rememberMe) {
+          localStorage.setItem("secretKey", secretKey);
+        } else {
+          localStorage.removeItem("secretKey");
+        }
         setIsLoggedIn(true);
         onClose();
         toast({
@@ -292,15 +307,23 @@ const LandingPage = () => {
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Enter Test Key</ModalHeader>
+          <ModalHeader>Enter Login Key</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Input
-              placeholder="Enter test key"
-              value={secretKey}
-              onChange={(e) => setSecretKey(e.target.value)}
-              type="password"
-            />
+            <VStack spacing={4}>
+              <Input
+                placeholder="Enter key"
+                value={secretKey}
+                onChange={(e) => setSecretKey(e.target.value)}
+                type="password"
+              />
+              <Checkbox
+                isChecked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              >
+                Remember me
+              </Checkbox>
+            </VStack>
           </ModalBody>
           <ModalFooter>
             <Button
@@ -322,4 +345,5 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+
 
