@@ -313,7 +313,7 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
                       ) => {
                         const target = e.target as HTMLImageElement;
                         target.onerror = null;
-                        target.src = "/path/to/fallback-image.jpg"; // Replace with your fallback image
+                        target.src = "/fallback-image.jpg";
                       }}
                     />
                     <Box
