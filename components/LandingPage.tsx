@@ -22,8 +22,12 @@ import {
   useToast,
   Checkbox,
 } from "@chakra-ui/react";
-import CardanoAINFTMinter from "./CardanoAINFTMinter";
 import LandingPageContent from "./LandingPageContent";
+
+// Define props interface
+interface LandingPageProps {
+  onLogin: () => void;
+}
 
 const web3Gradient = "linear-gradient(to right, #00FFFF, #FF00FF)";
 
@@ -87,8 +91,7 @@ const WaveAnimation = () => (
   </Box>
 );
 
-const LandingPage = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [secretKey, setSecretKey] = useState("");
@@ -108,7 +111,7 @@ const LandingPage = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (email && password) {
-      setIsLoggedIn(true);
+      onLogin();
     }
   };
 
@@ -133,7 +136,7 @@ const LandingPage = () => {
         } else {
           localStorage.removeItem("secretKey");
         }
-        setIsLoggedIn(true);
+        onLogin();
         onClose();
         toast({
           title: "Login Successful",
@@ -164,10 +167,6 @@ const LandingPage = () => {
       setIsLoading(false);
     }
   };
-
-  if (isLoggedIn) {
-    return <CardanoAINFTMinter />;
-  }
 
   return (
     <Box
@@ -345,5 +344,3 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
-
-
