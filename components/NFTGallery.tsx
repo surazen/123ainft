@@ -86,6 +86,7 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
   const bgColor = useColorModeValue("gray.200", "gray.900");
   const textColor = useColorModeValue("gray.800", "gray.50");
   const borderColor = useColorModeValue("gray.500", "gray.700");
+  const headingColor = useColorModeValue("blue.600", "blue.300");
 
   // Effect to fetch NFTs when the wallet is connected
   useEffect(() => {
@@ -226,7 +227,13 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
         maxWidth="1200px"
       >
         <Flex justifyContent="space-between" alignItems="center" mb={4}>
-          <Heading as="h1" size="lg">
+          <Heading
+            as="h2"
+            size="lg"
+            textAlign="center"
+            mb={4}
+            color={headingColor}
+          >
             MyNFTs Gallery
           </Heading>
         </Flex>
