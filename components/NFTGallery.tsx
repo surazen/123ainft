@@ -5,7 +5,6 @@ import {
   Grid,
   Heading,
   Text,
-  Image,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -20,14 +19,16 @@ import {
   Flex,
   useColorModeValue,
   Center,
-  Spinner,
   Menu,
   MenuButton,
   MenuList,
   MenuItem,
   IconButton,
+  keyframes,
 } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 
 // Interface for the detailed asset structure received from the API
 interface DetailedAsset {
@@ -64,6 +65,28 @@ interface NFTsResponse {
 interface NFTGalleryProps {
   itemsPerPage?: number;
 }
+
+// Step beater animation
+const stepBeater = keyframes`
+  0%, 100% { height: 10px; }
+  50% { height: 20px; }
+`;
+
+// Step beater component
+const StepBeater = () => (
+  <Flex justifyContent="center" alignItems="center" height="100%">
+    {[...Array(3)].map((_, i) => (
+      <Box
+        key={i}
+        width="4px"
+        height="10px"
+        backgroundColor="blue.500"
+        marginX="2px"
+        animation={`${stepBeater} 1s ease-in-out ${i * 0.1}s infinite`}
+      />
+    ))}
+  </Flex>
+);
 
 const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
   // State to store the list of NFTs
@@ -155,9 +178,8 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
     onOpen();
   };
 
-  // New function to handle menu actions
+  // Function to handle menu actions (to be implemented)
   const handleMenuAction = (action: string, nft: ValidNFT) => {
-    // This function will be implemented later
     console.log(`${action} action for NFT:`, nft);
   };
 
@@ -168,6 +190,15 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // Function to get optimized image URL
+  const getOptimizedImageUrl = (originalUrl: string) => {
+    if (originalUrl.startsWith("ipfs://")) {
+      const ipfsHash = originalUrl.slice(7);
+      return `https://ipfs.io/ipfs/${ipfsHash}`;
+    }
+    return originalUrl;
+  };
 
   // Render based on different states
   if (!connected) {
@@ -183,12 +214,7 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
   if (loading) {
     return (
       <Center h="50vh">
-        <VStack spacing={4}>
-          <Spinner size="xl" color="blue.500" />
-          <Text fontSize="sm" fontWeight="medium">
-            Loading NFTs...
-          </Text>
-        </VStack>
+        <StepBeater />
       </Center>
     );
   }
@@ -226,17 +252,9 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
         width="100%"
         maxWidth="1200px"
       >
-        <Flex justifyContent="space-between" alignItems="center" mb={4}>
-          <Heading
-            as="h2"
-            size="lg"
-            textAlign="center"
-            mb={4}
-            color={headingColor}
-          >
-            MyNFTs Gallery
-          </Heading>
-        </Flex>
+        <Heading as="h2" size="lg" textAlign="left" mb={4} color={headingColor}>
+          MyNFTs Gallery
+        </Heading>
         {nfts.length === 0 ? (
           <Text>No valid NFTs with quantity 1 found in this wallet.</Text>
         ) : (
@@ -282,18 +300,21 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
                     right={0}
                     bottom={0}
                   >
-                    <Image
-                      src={
-                        nft.metadata.image.startsWith("ipfs://")
-                          ? `https://ipfs.io/ipfs/${nft.metadata.image.slice(
-                              7
-                            )}`
-                          : nft.metadata.image
-                      }
+                    <LazyLoadImage
+                      src={getOptimizedImageUrl(nft.metadata.image)}
                       alt={nft.metadata.name}
-                      objectFit="cover"
+                      effect="blur"
                       width="100%"
                       height="100%"
+                      style={{ objectFit: "cover" }}
+                      placeholder={<StepBeater />}
+                      onError={(
+                        e: React.SyntheticEvent<HTMLImageElement, Event>
+                      ) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = "/path/to/fallback-image.jpg"; // Replace with your fallback image
+                      }}
                     />
                     <Box
                       position="absolute"
@@ -333,7 +354,7 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
                       border="none"
                       borderRadius="md"
                       p={1}
-                      minW="auto" // Allow the width to adjust to content
+                      minW="auto"
                     >
                       <MenuItem
                         onClick={(e) => {
@@ -403,17 +424,19 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
             <ModalCloseButton />
             <ModalBody>
               <VStack spacing={4} align="stretch">
-                <Image
-                  src={
-                    selectedNFT?.metadata.image.startsWith("ipfs://")
-                      ? `https://ipfs.io/ipfs/${selectedNFT?.metadata.image.slice(
-                          7
-                        )}`
-                      : selectedNFT?.metadata.image
-                  }
+                <LazyLoadImage
+                  src={getOptimizedImageUrl(selectedNFT?.metadata.image || "")}
                   alt={selectedNFT?.metadata.name}
-                  maxH="400px"
-                  objectFit="contain"
+                  effect="blur"
+                  style={{ maxHeight: "400px", objectFit: "contain" }}
+                  placeholder={<StepBeater />}
+                  onError={(
+                    e: React.SyntheticEvent<HTMLImageElement, Event>
+                  ) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null;
+                    target.src = "/path/to/fallback-image.jpg"; // Replace with your fallback image
+                  }}
                 />
                 <Text>
                   <strong>Description:</strong>{" "}
