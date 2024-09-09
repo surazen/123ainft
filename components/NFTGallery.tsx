@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@meshsdk/react";
 import {
   Box,
@@ -25,10 +25,14 @@ import {
   MenuItem,
   IconButton,
   keyframes,
+  Spacer,
+  Spinner,
 } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
+import BurnNFT from "./BurnNFT";
+import SendNFT from "./SendNFT";
 
 // Interface for the detailed asset structure received from the API
 interface DetailedAsset {
@@ -74,17 +78,27 @@ const stepBeater = keyframes`
 
 // Step beater component
 const StepBeater = () => (
-  <Flex justifyContent="center" alignItems="center" height="100%">
-    {[...Array(3)].map((_, i) => (
-      <Box
-        key={i}
-        width="4px"
-        height="10px"
-        backgroundColor="blue.500"
-        marginX="2px"
-        animation={`${stepBeater} 1s ease-in-out ${i * 0.1}s infinite`}
-      />
-    ))}
+  <Flex
+    justifyContent="center"
+    alignItems="center"
+    height="100%"
+    flexDirection="column"
+  >
+    <Flex>
+      {[...Array(3)].map((_, i) => (
+        <Box
+          key={i}
+          width="4px"
+          height="10px"
+          backgroundColor="blue.500"
+          marginX="2px"
+          animation={`${stepBeater} 1s ease-in-out ${i * 0.1}s infinite`}
+        />
+      ))}
+    </Flex>
+    <Text fontSize="sm" color="gray.500" marginTop="8px">
+      loading...
+    </Text>
   </Flex>
 );
 
@@ -101,7 +115,12 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   // Hook to control the modal
   const { isOpen, onOpen, onClose } = useDisclosure();
-
+  // State for burn modal
+  const [burnModalOpen, setBurnModalOpen] = useState(false);
+  const [nftToBurn, setNftToBurn] = useState<ValidNFT | null>(null);
+  // State for send modal
+  const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [nftToSend, setNftToSend] = useState<ValidNFT | null>(null);
   // Hook to access wallet connection status and wallet API
   const { connected, wallet } = useWallet();
 
@@ -111,15 +130,8 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
   const borderColor = useColorModeValue("gray.500", "gray.700");
   const headingColor = useColorModeValue("blue.600", "blue.300");
 
-  // Effect to fetch NFTs when the wallet is connected
-  useEffect(() => {
-    if (connected && wallet) {
-      fetchNFTs();
-    }
-  }, [connected, wallet]);
-
   // Function to fetch NFTs from the API
-  const fetchNFTs = async () => {
+  const fetchNFTs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -170,7 +182,14 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [wallet]);
+
+  // Effect to fetch NFTs when the wallet is connected
+  useEffect(() => {
+    if (connected && wallet) {
+      fetchNFTs();
+    }
+  }, [connected, wallet, fetchNFTs]);
 
   // Function to handle NFT click and open modal
   const handleNFTClick = (nft: ValidNFT) => {
@@ -178,10 +197,34 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
     onOpen();
   };
 
-  // Function to handle menu actions (to be implemented)
+  // Function to handle menu actions
   const handleMenuAction = (action: string, nft: ValidNFT) => {
-    console.log(`${action} action for NFT:`, nft);
+    if (action === "burn") {
+      setNftToBurn(nft);
+      setBurnModalOpen(true);
+    } else if (action === "send") {
+      setNftToSend(nft);
+      setSendModalOpen(true);
+    }
   };
+
+  // Function to handle burn completion
+  const handleBurnComplete = useCallback(() => {
+    if (nftToBurn) {
+      setNFTs((prevNFTs) =>
+        prevNFTs.filter((nft) => nft.unit !== nftToBurn.unit)
+      );
+      setNftToBurn(null);
+      setBurnModalOpen(false);
+    }
+  }, [nftToBurn]);
+
+  // Function to handle send completion
+  const handleSendComplete = useCallback((sentNftUnit: string) => {
+    setNFTs((prevNFTs) => prevNFTs.filter((nft) => nft.unit !== sentNftUnit));
+    setNftToSend(null);
+    setSendModalOpen(false);
+  }, []);
 
   // Calculate total pages for pagination
   const totalPages = Math.ceil(nfts.length / itemsPerPage);
@@ -252,9 +295,22 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
         width="100%"
         maxWidth="1200px"
       >
-        <Heading as="h2" size="lg" textAlign="left" mb={4} color={headingColor}>
-          MyNFTs Gallery
-        </Heading>
+        <Flex alignItems="center" mb={4}>
+          <Heading as="h2" size="lg" textAlign="left" color={headingColor}>
+            MyNFTs Gallery
+          </Heading>
+          <Spacer />
+          <Flex alignItems="center">
+            {loading ? (
+              <Spinner size="sm" mr={2} />
+            ) : (
+              <Text fontSize="sm" fontWeight="bold">
+                Total NFTs: {nfts.length}
+              </Text>
+            )}
+          </Flex>
+        </Flex>
+
         {nfts.length === 0 ? (
           <Text>No valid NFTs with quantity 1 found in this wallet.</Text>
         ) : (
@@ -435,7 +491,7 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
                   ) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
-                    target.src = "/path/to/fallback-image.jpg"; // Replace with your fallback image
+                    target.src = "/fallback-image.jpg";
                   }}
                 />
                 <Text>
@@ -483,6 +539,32 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
             </ModalFooter>
           </ModalContent>
         </Modal>
+
+        {/* BurnNFT component */}
+        {nftToBurn && (
+          <BurnNFT
+            isOpen={burnModalOpen}
+            onClose={() => {
+              setBurnModalOpen(false);
+              setNftToBurn(null);
+            }}
+            nft={nftToBurn}
+            onBurnComplete={handleBurnComplete}
+          />
+        )}
+
+        {/* SendNFT component */}
+        {nftToSend && (
+          <SendNFT
+            isOpen={sendModalOpen}
+            onClose={() => {
+              setSendModalOpen(false);
+              setNftToSend(null);
+            }}
+            nft={nftToSend}
+            onSendComplete={handleSendComplete}
+          />
+        )}
       </Box>
     </Flex>
   );
