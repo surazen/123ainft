@@ -164,7 +164,7 @@ const SendNFT: React.FC<SendNFTProps> = ({
                 {onChainMessage.length}/{MAX_MESSAGE_LENGTH} characters
               </FormHelperText>
             </FormControl>
-            <Alert status="info" borderRadius="md">
+            <Alert status="info" borderRadius="md" fontSize="sm">
               <AlertIcon />
               On-chain messages are public and permanently recorded on the
               blockchain. Please be mindful of the content you include.

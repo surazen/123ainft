@@ -27,8 +27,13 @@ import {
   keyframes,
   Spacer,
   Spinner,
+  useToast,
+  Tooltip,
+  Alert,
+  AlertIcon,
+  CloseButton,
 } from "@chakra-ui/react";
-import { HamburgerIcon } from "@chakra-ui/icons";
+import { HamburgerIcon, RepeatIcon } from "@chakra-ui/icons";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import BurnNFT from "./BurnNFT";
@@ -76,7 +81,7 @@ const stepBeater = keyframes`
   50% { height: 20px; }
 `;
 
-// Step beater component
+// Step beater component for loading animation
 const StepBeater = () => (
   <Flex
     justifyContent="center"
@@ -123,6 +128,15 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
   const [nftToSend, setNftToSend] = useState<ValidNFT | null>(null);
   // Hook to access wallet connection status and wallet API
   const { connected, wallet } = useWallet();
+  // State to track manual refresh status
+  const [refreshing, setRefreshing] = useState(false);
+  // State for forcing re-render
+  const [key, setKey] = useState(0);
+  // State to control the visibility of the info box
+  const [showInfoBox, setShowInfoBox] = useState(true);
+
+  // Hook to show toast notifications
+  const toast = useToast();
 
   // Chakra UI color mode values for dynamic theming
   const bgColor = useColorModeValue("gray.200", "gray.900");
@@ -131,58 +145,83 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
   const headingColor = useColorModeValue("blue.600", "blue.300");
 
   // Function to fetch NFTs from the API
-  const fetchNFTs = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const fetchNFTs = useCallback(
+    async (showToast: boolean = false) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      // Get the first used address from the wallet (receive address)
-      const addresses = await wallet.getUsedAddresses();
-      const address = addresses[0];
-      if (!address) {
-        throw new Error("No wallet address available");
-      }
-      console.log("Wallet address obtained:", address);
+        // Get the first used address from the wallet (receive address)
+        const addresses = await wallet.getUsedAddresses();
+        const address = addresses[0];
+        if (!address) {
+          throw new Error("No wallet address available");
+        }
+        console.log("Wallet address obtained:", address);
 
-      // Make API call to fetch NFT data
-      const response = await fetch("/api/blockfrost-data", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ walletAddress: address }),
-      });
+        // Make API call to fetch NFT data
+        const response = await fetch("/api/blockfrost-data", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ walletAddress: address }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-      const data: NFTsResponse = await response.json();
+        const data: NFTsResponse = await response.json();
 
-      if (data.error) {
-        throw new Error(`BlockFrost API error: ${data.error}`);
-      }
+        if (data.error) {
+          throw new Error(`BlockFrost API error: ${data.error}`);
+        }
 
-      if (data.assets) {
-        // Filter for valid NFTs and those with a quantity of '1'
-        const validNFTs = data.assets.filter(
-          (asset) => isValidNFT(asset) && asset.quantity === "1"
+        if (data.assets) {
+          // Filter for valid NFTs and those with a quantity of '1'
+          const validNFTs = data.assets.filter(
+            (asset) => isValidNFT(asset) && asset.quantity === "1"
+          );
+          setNFTs(validNFTs);
+        } else {
+          setNFTs([]);
+        }
+
+        // Show success toast if requested
+        if (showToast) {
+          toast({
+            title: "NFTs refreshed",
+            description: "Your NFT gallery has been updated.",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching NFTs:", error);
+        setError(
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred while fetching NFTs"
         );
-        setNFTs(validNFTs);
-      } else {
-        setNFTs([]);
+        // Show error toast if requested
+        if (showToast) {
+          toast({
+            title: "Error refreshing NFTs",
+            description: "There was an error updating your NFT gallery.",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+        }
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-    } catch (error) {
-      console.error("Error fetching NFTs:", error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : "An unknown error occurred while fetching NFTs"
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [wallet]);
+    },
+    [wallet, toast]
+  );
 
   // Effect to fetch NFTs when the wallet is connected
   useEffect(() => {
@@ -216,15 +255,44 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
       );
       setNftToBurn(null);
       setBurnModalOpen(false);
+      // Show success toast for burn action
+      toast({
+        title: "NFT Burned",
+        description: "The NFT has been successfully burned.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
     }
-  }, [nftToBurn]);
+  }, [nftToBurn, toast]);
 
   // Function to handle send completion
-  const handleSendComplete = useCallback((sentNftUnit: string) => {
-    setNFTs((prevNFTs) => prevNFTs.filter((nft) => nft.unit !== sentNftUnit));
-    setNftToSend(null);
-    setSendModalOpen(false);
-  }, []);
+  const handleSendComplete = useCallback(
+    (sentNftUnit: string) => {
+      setNFTs((prevNFTs) => prevNFTs.filter((nft) => nft.unit !== sentNftUnit));
+      setNftToSend(null);
+      setSendModalOpen(false);
+      // Show success toast for send action
+      toast({
+        title: "NFT Sent",
+        description: "The NFT has been successfully sent.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    },
+    [toast]
+  );
+
+  // Function to handle manual refresh
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchNFTs(true).then(() => {
+      // Force re-render of the entire component
+      setKey((prevKey) => prevKey + 1);
+      setRefreshing(false);
+    });
+  }, [fetchNFTs]);
 
   // Calculate total pages for pagination
   const totalPages = Math.ceil(nfts.length / itemsPerPage);
@@ -254,7 +322,7 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
     );
   }
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <Center h="50vh">
         <StepBeater />
@@ -271,7 +339,7 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
         <Text color="red.500" whiteSpace="pre-wrap" textAlign="center">
           {error}
         </Text>
-        <Button mt={4} onClick={fetchNFTs} colorScheme="blue">
+        <Button mt={4} onClick={() => fetchNFTs()} colorScheme="blue">
           Retry
         </Button>
       </Center>
@@ -280,6 +348,7 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
 
   return (
     <Flex
+      key={key} // Add key prop to force re-render
       width="100%"
       height="100vh"
       justifyContent="center"
@@ -295,19 +364,45 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
         width="100%"
         maxWidth="1200px"
       >
+        {showInfoBox && (
+          <Alert status="info" mb={4} fontSize="sm" borderRadius="md">
+            <AlertIcon />
+            <Box flex="1">
+              Each NFT has a menu (☰) with options to Burn or Send the NFT.
+              Click on an NFT to view more details.
+            </Box>
+            <CloseButton
+              onClick={() => setShowInfoBox(false)}
+              position="absolute"
+              right="8px"
+              top="8px"
+            />
+          </Alert>
+        )}
+
         <Flex alignItems="center" mb={4}>
           <Heading as="h2" size="lg" textAlign="left" color={headingColor}>
             MyNFTs Gallery
           </Heading>
           <Spacer />
           <Flex alignItems="center">
-            {loading ? (
+            {loading || refreshing ? (
               <Spinner size="sm" mr={2} />
             ) : (
-              <Text fontSize="sm" fontWeight="bold">
+              <Text fontSize="sm" fontWeight="bold" mr={2}>
                 Total NFTs: {nfts.length}
               </Text>
             )}
+            {/* Refresh button */}
+            <Tooltip label="Refresh NFTs" aria-label="A tooltip">
+              <IconButton
+                aria-label="Refresh NFTs"
+                icon={<RepeatIcon />}
+                onClick={handleRefresh}
+                isLoading={refreshing}
+                size="sm"
+              />
+            </Tooltip>
           </Flex>
         </Flex>
 
@@ -445,6 +540,7 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
                 </Box>
               ))}
             </Grid>
+            {/* Pagination controls */}
             <Flex justifyContent="center" mt={6} flexWrap="wrap">
               <Button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -473,6 +569,7 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
           </>
         )}
 
+        {/* Modal for displaying NFT details */}
         <Modal isOpen={isOpen} onClose={onClose} size="xl">
           <ModalOverlay />
           <ModalContent bg={bgColor} color={textColor}>

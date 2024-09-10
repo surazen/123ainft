@@ -137,10 +137,7 @@ const CardanoAINFTMinter: React.FC<CardanoAINFTMinterProps> = ({
             <VStack spacing={6} align="stretch">
               {currentView === "home" && (
                 <>
-                  <Box alignSelf="left" mb={2}>
-                    <ProcessInfoBox />
-                  </Box>
-
+                  <ProcessInfoBox />
                   <Box
                     borderWidth="1px"
                     borderColor={useColorModeValue("cyan.500", "cyan.800")}

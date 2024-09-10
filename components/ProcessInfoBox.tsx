@@ -1,38 +1,57 @@
-import React from "react";
+import React, { useState } from "react";
 import {
+  Alert,
+  AlertIcon,
   Box,
-  VStack,
-  Text,
+  CloseButton,
   OrderedList,
   ListItem,
+  Text,
+  Flex,
   useColorModeValue,
 } from "@chakra-ui/react";
 
 const ProcessInfoBox: React.FC = () => {
-  // Use color mode values for background, text, and border colors
+  const [isVisible, setIsVisible] = useState(true);
+
   const bgColor = useColorModeValue("blue.50", "blue.900");
   const textColor = useColorModeValue("gray.800", "gray.100");
-  const borderColor = useColorModeValue("blue.200", "blue.700");
   const headingColor = useColorModeValue("blue.600", "blue.200");
   const noteColor = useColorModeValue("orange.500", "orange.300");
+  const borderColor = useColorModeValue("blue.200", "blue.700");
+
+  if (!isVisible) return null;
 
   return (
-    <Box
-      borderWidth="1px"
+    <Alert
+      status="info"
+      variant="subtle"
+      flexDirection="column"
+      alignItems="flex-start"
       borderRadius="md"
       p={3}
       bg={bgColor}
-      maxWidth="470px"
-      boxShadow="sm"
-      fontSize="sm"
-      borderColor={borderColor}
       color={textColor}
+      maxWidth="470px"
+      fontSize="sm"
+      borderWidth="1px"
+      borderColor={borderColor}
+      boxShadow="sm"
     >
-      <VStack align="stretch" spacing={2}>
+      <Flex alignItems="center" width="100%">
+        <AlertIcon />
         <Text fontSize="md" fontWeight="bold" color={headingColor}>
           NFT Creation Process
         </Text>
-        <Text fontSize="sm">
+        <CloseButton
+          position="absolute"
+          right="8px"
+          top="8px"
+          onClick={() => setIsVisible(false)}
+        />
+      </Flex>
+      <Box mt={2}>
+        <Text fontSize="sm" mb={2}>
           Follow these steps to create your AI-generated NFT:
         </Text>
         <OrderedList spacing={1} pl={4} fontSize="sm">
@@ -45,8 +64,8 @@ const ProcessInfoBox: React.FC = () => {
             </Text>
           </ListItem>
         </OrderedList>
-      </VStack>
-    </Box>
+      </Box>
+    </Alert>
   );
 };
 
