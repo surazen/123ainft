@@ -33,7 +33,7 @@ import {
   AlertIcon,
   CloseButton,
 } from "@chakra-ui/react";
-import { HamburgerIcon, RepeatIcon } from "@chakra-ui/icons";
+import { HamburgerIcon, InfoIcon, RepeatIcon } from "@chakra-ui/icons";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import BurnNFT from "./BurnNFT";
@@ -137,6 +137,7 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
   const [key, setKey] = useState(0);
   // State to control the visibility of the info box
   const [showInfoBox, setShowInfoBox] = useState(true);
+  const [showSyncMessage, setShowSyncMessage] = useState(true);
 
   // Hook to show toast notifications
   const toast = useToast();
@@ -146,6 +147,8 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
   const textColor = useColorModeValue("gray.800", "gray.50");
   const borderColor = useColorModeValue("gray.500", "gray.700");
   const headingColor = useColorModeValue("blue.600", "blue.300");
+  const syncMessageBg = useColorModeValue("blue.50", "blue.900");
+  const syncMessageColor = useColorModeValue("blue.800", "blue.50");
 
   // Function to fetch NFTs from the API
   const fetchNFTs = useCallback(
@@ -371,11 +374,35 @@ const NFTGallery: React.FC<NFTGalleryProps> = ({ itemsPerPage = 15 }) => {
           <Alert status="info" mb={4} fontSize="sm" borderRadius="md">
             <AlertIcon />
             <Box flex="1">
-              Each NFT has a menu (☰) with options to Burn or Send the NFT.
-              Click on an NFT to view more details.
+              Each NFT has a menu (☰) with options to Send or Burn the NFT.
+              Click on a NFT to view more details.
             </Box>
             <CloseButton
               onClick={() => setShowInfoBox(false)}
+              position="absolute"
+              right="8px"
+              top="8px"
+            />
+          </Alert>
+        )}
+
+        {showSyncMessage && (
+          <Alert
+            status="info"
+            mb={4}
+            fontSize="xs"
+            borderRadius="md"
+            bg={syncMessageBg}
+            color={syncMessageColor}
+          >
+            <InfoIcon mr={2} />
+            <Box flex="1">
+              Recently minted NFTs may not appear immediately due to blockchain
+              synchronization. Please allow some time for updates to be
+              reflected.
+            </Box>
+            <CloseButton
+              onClick={() => setShowSyncMessage(false)}
               position="absolute"
               right="8px"
               top="8px"

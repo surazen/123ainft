@@ -59,7 +59,7 @@ const ProcessInfoBox: React.FC = () => {
           <ListItem>Upload & Pin the image to IPFS</ListItem>
           <ListItem>
             Mint your NFT on Cardano{" "}
-            <Text as="span" color={noteColor}>
+            <Text as="span" color={noteColor} fontSize="xs">
               [ Note: Connect your Cardano wallet ]
             </Text>
           </ListItem>
