@@ -36,7 +36,7 @@ const gradientOptions = {
   option2: "linear-gradient(to right, #FFA500, #FF00FF)", // Orange to Magenta
   option3: "linear-gradient(to right, #1E90FF, #FF1493)", // Dodger Blue to Deep Pink
   option4: "linear-gradient(to right, #00FF00, #0000FF)", // Lime to Blue
-  option5: "linear-gradient(to right, #FFD700, black)", // Gold to Orange Red
+  option5: "linear-gradient(to left, #FFD700, black)", // Gold to Orange Red
 };
 
 const selectedGradient = gradientOptions.option5;
