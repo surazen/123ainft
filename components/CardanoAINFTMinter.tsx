@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import AIImageGenerator from "./AIImageGenerator";
 import AIImageMinter from "./AIImageMinter";
 import StatusDisplay, { StatusType } from "./StatusDisplay";
@@ -45,6 +45,7 @@ const CardanoAINFTMinter: React.FC<CardanoAINFTMinterProps> = ({
   const [mintStatus, setMintStatus] = useState<StatusType>("idle");
   const { colorMode, toggleColorMode } = useColorMode();
   const [currentView, setCurrentView] = useState<ViewType>("home");
+  const [shouldResetGenerator, setShouldResetGenerator] = useState(false);
 
   const handleImageGenerated = (imageUrl: string) => {
     setGeneratedImageUrl(imageUrl);
@@ -52,7 +53,17 @@ const CardanoAINFTMinter: React.FC<CardanoAINFTMinterProps> = ({
 
   const handleMintStatusChange = (newStatus: StatusType) => {
     setMintStatus(newStatus);
+    if (newStatus === "minted") {
+      setShouldResetGenerator(true);
+      setTimeout(() => {
+        setMintStatus("idle");
+      }, 3000);
+    }
   };
+
+  const resetGenerator = useCallback(() => {
+    setShouldResetGenerator(false);
+  }, []);
 
   const bgColor = useColorModeValue("#EEF5FF", "gray.800");
   const textColor = useColorModeValue("gray.800", "white");
@@ -152,7 +163,11 @@ const CardanoAINFTMinter: React.FC<CardanoAINFTMinterProps> = ({
                     >
                       Step 1: Generate an AI image
                     </Text>
-                    <AIImageGenerator onImageGenerated={handleImageGenerated} />
+                    <AIImageGenerator
+                      onImageGenerated={handleImageGenerated}
+                      shouldReset={shouldResetGenerator}
+                      onReset={resetGenerator}
+                    />
                   </Box>
 
                   <AIImageMinter

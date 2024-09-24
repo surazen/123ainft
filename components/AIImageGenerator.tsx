@@ -58,10 +58,14 @@ const stylePresets = [
 // Define the props interface for the component
 interface AIImageGeneratorProps {
   onImageGenerated: (imageUrl: string) => void;
+  shouldReset: boolean;
+  onReset: () => void;
 }
 
 const AIImageGenerator: React.FC<AIImageGeneratorProps> = ({
   onImageGenerated,
+  shouldReset,
+  onReset,
 }) => {
   // State variables
   const [prompt, setPrompt] = useState("");
@@ -101,6 +105,20 @@ const AIImageGenerator: React.FC<AIImageGeneratorProps> = ({
     setImageUrl("");
     setIsImageGenerated(false);
   };
+
+  //Function to reset the image-generator post successful mint
+  useEffect(() => {
+    if (shouldReset) {
+      setPrompt("");
+      setEngine("");
+      setDimension("");
+      setStylePreset("");
+      setAIModel("stable-diffusion");
+      setImageUrl("");
+      setIsImageGenerated(false);
+      onReset(); // Call this to inform the parent that reset is complete
+    }
+  }, [shouldReset, onReset]);
 
   // Function to handle image generation
   const handleGenerate = async () => {
@@ -149,7 +167,6 @@ const AIImageGenerator: React.FC<AIImageGeneratorProps> = ({
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: 'include',
         body: JSON.stringify(requestBody),
       });
 

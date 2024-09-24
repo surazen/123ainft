@@ -34,6 +34,8 @@ import {
   AlertDescription,
   IconButton,
   useColorModeValue,
+  FormHelperText,
+  FormControl,
 } from "@chakra-ui/react";
 import { FiUploadCloud, FiEye, FiStar, FiInfo } from "react-icons/fi";
 import { BeatLoader } from "react-spinners";
@@ -72,6 +74,8 @@ const AIImageMinter: React.FC<AIImageMinterProps> = ({
   const [showWalletAlert, setShowWalletAlert] = useState(false);
   const [isUploadDisabled, setIsUploadDisabled] = useState(false);
   const [isStep3Enabled, setIsStep3Enabled] = useState(false);
+  const [isMintDisabled, setIsMintDisabled] = useState(true);
+  const [remainingChars, setRemainingChars] = useState(64);
 
   const toast = useToast();
   const { connected, wallet } = useWallet();
@@ -81,6 +85,22 @@ const AIImageMinter: React.FC<AIImageMinterProps> = ({
       setShowWalletAlert(false);
     }
   }, [connected]);
+
+  useEffect(() => {
+    setIsMintDisabled(
+      !connected || !ipfsHash || !nftName || !nftDescription || isMinted
+    );
+  }, [connected, ipfsHash, nftName, nftDescription, isMinted]);
+
+  const handleDescriptionChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    const input = e.target.value;
+    if (input.length <= 64) {
+      setNftDescription(input);
+      setRemainingChars(64 - input.length);
+    }
+  };
 
   const {
     isOpen: isPreviewOpen,
@@ -109,6 +129,9 @@ const AIImageMinter: React.FC<AIImageMinterProps> = ({
       setIsUploading(true);
       setStatus("uploading");
       onMintStatusChange("uploading");
+      setIsStep3Enabled(true);
+      setIsUploadDisabled(true);
+      setIsMinted(false); // Reset minted state when a new image is uploaded
 
       const response = await fetch(generatedImageUrl);
       const blob = await response.blob();
@@ -157,10 +180,14 @@ const AIImageMinter: React.FC<AIImageMinterProps> = ({
 
   useEffect(() => {
     if (generatedImageUrl) {
-      setIsUploadDisabled(false);
       setIpfsHash(null);
       setIpfsUrl("");
+      setIsUploadDisabled(false); // Enable upload when a new image is generated
       setIsStep3Enabled(false);
+      setIsMinted(false);
+      setStatus("idle");
+    } else {
+      setIsUploadDisabled(true); // Disable upload when there's no image
     }
   }, [generatedImageUrl]);
 
@@ -179,9 +206,11 @@ const AIImageMinter: React.FC<AIImageMinterProps> = ({
     setNftName("");
     setNftDescription("");
     setStatus("idle");
-    setIsMinted(true);
-    onMintStatusChange("minted");
+    setIsMinted(false);
+    onMintStatusChange("minted"); // This will trigger the reset in AIImageGenerator
     setIsStep3Enabled(false);
+    setIsUploadDisabled(true);
+    setRemainingChars(64);
   };
 
   const mintNFT = async () => {
@@ -323,7 +352,10 @@ const AIImageMinter: React.FC<AIImageMinterProps> = ({
                 size="lg"
                 onClick={uploadToIPFS}
                 isDisabled={
-                  !generatedImageUrl || isUploading || isUploadDisabled
+                  !generatedImageUrl ||
+                  isUploading ||
+                  isMinted ||
+                  isUploadDisabled
                 }
               >
                 {isUploading ? (
@@ -331,6 +363,8 @@ const AIImageMinter: React.FC<AIImageMinterProps> = ({
                     <Text>Uploading</Text>
                     <BeatLoader size={8} color="white" />
                   </HStack>
+                ) : isUploadDisabled && ipfsHash ? (
+                  "Uploaded to IPFS"
                 ) : (
                   "Upload & Pin to IPFS"
                 )}
@@ -355,7 +389,7 @@ const AIImageMinter: React.FC<AIImageMinterProps> = ({
             </Flex>
             <SaveToDisk
               imageUrl={generatedImageUrl}
-              isDisabled={!generatedImageUrl}
+              isDisabled={!generatedImageUrl || isMinted}
             />
           </HStack>
         </Center>
@@ -404,12 +438,18 @@ const AIImageMinter: React.FC<AIImageMinterProps> = ({
               </AlertDescription>
             </Alert>
           )}
-          <Textarea
-            placeholder="NFT Description"
-            value={nftDescription}
-            onChange={(e) => setNftDescription(e.target.value)}
-            isDisabled={!isStep3Enabled}
-          />
+          <FormControl>
+            <Textarea
+              placeholder="NFT Description (max 64 characters)"
+              value={nftDescription}
+              onChange={handleDescriptionChange}
+              isDisabled={!isStep3Enabled}
+              maxLength={64}
+            />
+            <FormHelperText>
+              Characters remaining: {remainingChars}/64 (CIP-25 standard limit)
+            </FormHelperText>
+          </FormControl>
           <Input
             value={ipfsUrl}
             isReadOnly
@@ -449,14 +489,7 @@ const AIImageMinter: React.FC<AIImageMinterProps> = ({
                 leftIcon={<FiStar />}
                 size="lg"
                 onClick={mintNFT}
-                isDisabled={
-                  !isStep3Enabled ||
-                  !connected ||
-                  !ipfsHash ||
-                  !nftName ||
-                  !nftDescription ||
-                  isMinted
-                }
+                isDisabled={isMintDisabled}
               >
                 {isMinted ? "NFT Minted" : "Mint NFT"}
               </Button>
