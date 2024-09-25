@@ -11,6 +11,7 @@ import {
   Text,
   VStack,
   useToast,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { useWallet } from "@meshsdk/react";
 import { Transaction, ForgeScript, Asset } from "@meshsdk/core";
@@ -54,6 +55,9 @@ const BurnNFT: React.FC<BurnNFTProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const { wallet } = useWallet();
   const toast = useToast();
+
+  const warningColor = useColorModeValue("red.500", "red.300");
+  const nftNameColor = useColorModeValue("blue.600", "blue.300");
 
   const handleBurn = async () => {
     setIsLoading(true);
@@ -108,16 +112,19 @@ const BurnNFT: React.FC<BurnNFTProps> = ({
         <ModalCloseButton />
         <ModalBody>
           <VStack spacing={4} align="stretch">
-            <Text>Are you sure you want to burn this NFT?</Text>
-            <Text>
-              <strong>Name:</strong> {nft.metadata.name}
+            <Text color={warningColor} fontWeight="bold">
+              Are you sure you want to burn this NFT?
             </Text>
-            <Text>
-              <strong>Policy ID:</strong> {nft.policyId}
+            <Text color={nftNameColor} fontWeight="bold">
+              Name: {nft.metadata.name}
             </Text>
+            <Text fontSize="xs">Policy ID: {nft.policyId}</Text>
             <Text>
-              <strong>Asset Name:</strong>{" "}
+              Asset Name:{" "}
               {Buffer.from(nft.assetName || "", "hex").toString("utf-8")}
+            </Text>
+            <Text fontSize="xs" color="gray.500">
+              Note: Assets can only be burned by its minting address.
             </Text>
           </VStack>
         </ModalBody>
