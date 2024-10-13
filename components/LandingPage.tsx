@@ -9,8 +9,6 @@ import {
   Input,
   Image,
   chakra,
-  Link,
-  HStack,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -21,8 +19,13 @@ import {
   useDisclosure,
   useToast,
   Checkbox,
+  HStack,
+  Link,
 } from "@chakra-ui/react";
 import LandingPageContent from "./LandingPageContent";
+import VideoSection from "./VideoSection";
+import { motion } from "framer-motion";
+import { FaDiscord } from "react-icons/fa";
 
 // Define props interface
 interface LandingPageProps {
@@ -30,14 +33,40 @@ interface LandingPageProps {
 }
 
 const web3Gradient = "linear-gradient(to right, #00FFFF, #FF00FF)";
+const web3HoverGradient = "linear-gradient(to right, #FF00FF, #00FFFF)";
+
+const MotionBox = motion(Box);
+
+const Web3Button = React.forwardRef<HTMLButtonElement, any>((props, ref) => (
+  <MotionBox
+    as="button"
+    ref={ref}
+    py={2}
+    px={4}
+    borderRadius="md"
+    fontWeight="semibold"
+    color="white"
+    textAlign="center"
+    transition="all 0.2s cubic-bezier(.08,.52,.52,1)"
+    bgGradient={web3Gradient}
+    _hover={{
+      bgGradient: web3HoverGradient,
+    }}
+    _active={{
+      transform: "scale(0.98)",
+    }}
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.98 }}
+    {...props}
+  />
+));
 
 const gradientOptions = {
   option1: "linear-gradient(to right, #00FFFF, #FF00FF)", // Cyan to Magenta
   option2: "linear-gradient(to right, #FFA500, #FF00FF)", // Orange to Magenta
   option3: "linear-gradient(to right, #1E90FF, #FF1493)", // Dodger Blue to Deep Pink
   option4: "linear-gradient(to right, #00FF00, #0000FF)", // Lime to Blue
-  // option5: "linear-gradient(to right, #FFD700, black)", // Gold to Orange Red
-  option5: "linear-gradient(to left, #FFD700, black)"
+  option5: "linear-gradient(to left, #FFD700, black)"     // Gold to Black
 };
 
 const selectedGradient = gradientOptions.option5;
@@ -93,8 +122,6 @@ const WaveAnimation = () => (
 );
 
 const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -108,17 +135,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
       setRememberMe(true);
     }
   }, []);
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email && password) {
-      onLogin();
-    }
-  };
-
-  const handleGoogleSignIn = () => {
-    onOpen();
-  };
 
   const handleSecretKeySubmit = async () => {
     setIsLoading(true);
@@ -179,128 +195,79 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
       }}
     >
       <Container maxW="container.xl" py={20}>
-        <Flex
-          direction={{ base: "column", md: "row" }}
-          align="center"
-          justify="space-between"
-        >
-          <VStack align="flex-start" spacing={6} mb={{ base: 10, md: 0 }}>
-            <LogoText>123ainft</LogoText>
-            <Text fontSize="xl" color="white" fontWeight="medium">
-              Mint AI-generated NFTs on Cardano with ease
-            </Text>
-            <Text fontSize="md" color="gray.200">
-              Create, collect, trade or gift unique digital assets powered by
-              artificial intelligence
-            </Text>
-          </VStack>
-
-          <Box
-            bg="rgba(255, 255, 255, 0.15)"
-            p={8}
-            borderRadius="xl"
-            boxShadow="xl"
-            width={{ base: "full", md: "400px" }}
-            backdropFilter="blur(10px)"
-            border="1px solid rgba(255, 255, 255, 0.3)"
+        <VStack spacing={10} align="stretch">
+          <Flex
+            direction={{ base: "column", md: "row" }}
+            align={{ base: "center", md: "flex-start" }}
+            justify="space-between"
           >
-            <form onSubmit={handleLogin}>
-              <VStack spacing={4} align="stretch">
+            <VStack align="flex-start" spacing={2} flex={1}> {/* Reduced spacing here */}
+              <LogoText>123ainft</LogoText>
+              <Text fontSize="xl" color="white" fontWeight="medium">
+                Mint AI-generated NFTs on Cardano with ease
+              </Text>
+              <Text fontSize="md" color="gray.200">
+                Create, collect, trade or gift unique digital assets powered by
+                artificial intelligence
+              </Text>
+            </VStack>
+
+            <Box
+              bg="rgba(255, 255, 255, 0.15)"
+              p={4}
+              borderRadius="xl"
+              boxShadow="xl"
+              width={{ base: "full", md: "300px" }}
+              maxWidth="100%"
+              backdropFilter="blur(10px)"
+              border="1px solid rgba(255, 255, 255, 0.3)"
+              mt={{ base: 6, md: 0 }}
+            >
+              <VStack spacing={3} align="stretch">
+                {" "}
                 <Text
-                  fontSize="2xl"
+                  fontSize="xl"
                   fontWeight="bold"
                   color="#11235A"
                   textAlign="center"
                 >
                   Get Started
                 </Text>
-                <Input
-                  placeholder="Email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  bg="rgba(255, 255, 255, 0.2)"
-                  color="white"
-                  _placeholder={{ color: "gray.600" }}
-                  borderColor="rgba(255, 255, 255, 0.4)"
-                  _hover={{ borderColor: "rgba(255, 255, 255, 0.6)" }}
-                  _focus={{
-                    borderColor: "white",
-                    bg: "rgba(255, 255, 255, 0.3)",
-                    boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.6)",
-                  }}
-                />
-                <Input
-                  placeholder="Password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  bg="rgba(255, 255, 255, 0.2)"
-                  color="white"
-                  _placeholder={{ color: "gray.600" }}
-                  borderColor="rgba(255, 255, 255, 0.4)"
-                  _hover={{ borderColor: "rgba(255, 255, 255, 0.6)" }}
-                  _focus={{
-                    borderColor: "white",
-                    bg: "rgba(255, 255, 255, 0.3)",
-                    boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.6)",
-                  }}
-                />
-                <Button
-                  bg="#596FB7"
-                  _hover={{ color: "#FEFBD8" }}
-                  color="white"
-                  size="lg"
-                  type="submit"
-                >
-                  Sign In
-                </Button>
-                <HStack justify="space-between">
+                <Web3Button size="md" onClick={onOpen} width="100%">
+                  Sign in with Login Key
+                </Web3Button>
+                <Text fontSize="xs" color="gray.600" textAlign="center">
+                  {" "}
+                  This app is currently in beta. For login keys, please reach
+                  out on Discord:
+                </Text>
+                <HStack spacing={1} justify="center">
+                  <FaDiscord color="#7289da" />
                   <Link
-                    color="cyan.900"
-                    fontSize="sm"
-                    href="#"
-                    _hover={{ color: "cyan.700" }}
+                    href="https://discord.com/users/szen9778"
+                    isExternal
+                    fontSize="xs"
+                    color="blue.500"
+                    fontWeight="medium"
                   >
-                    Forgot password?
-                  </Link>
-                  <Link
-                    color="cyan.900"
-                    fontSize="sm"
-                    href="#"
-                    _hover={{ color: "cyan.700" }}
-                  >
-                    New User? Sign Up
+                    szen9778
                   </Link>
                 </HStack>
-                <Text textAlign="center" color="black">
-                  or
-                </Text>
-                <Button
-                  leftIcon={
-                    <Image
-                      src="/images/google-logo.jpg"
-                      alt="Google logo"
-                      boxSize="20px"
-                    />
-                  }
-                  bg="#F7F7F8"
-                  color="gray.700"
-                  border="1px solid"
-                  borderColor="gray.300"
-                  _hover={{ bg: "gray.100" }}
-                  size="lg"
-                  onClick={handleGoogleSignIn}
-                >
-                  Sign in with Google
-                </Button>
               </VStack>
-            </form>
-          </Box>
-        </Flex>
-        <Box mt={35}>
+            </Box>
+          </Flex>
+
+          <VideoSection
+            videoSrc="/123AINFT_v4.0.mp4"
+            posterSrc="/nft_minter.png"
+            title="How to Use 123ainft"
+            description="Watch this short video to learn how to use 123ainft and start creating your AI-generated NFTs on Cardano."
+            videoWidth={1080} 
+            videoHeight={720} 
+          />
+
           <LandingPageContent />
-        </Box>
+        </VStack>
       </Container>
       <WaveAnimation />
 
